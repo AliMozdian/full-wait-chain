@@ -1,0 +1,26 @@
+
+    waker:           Timer 25594
+    entry_SYSCALL_64_after_hwframe
+    do_syscall_64
+    x64_sys_call
+    __x64_sys_write
+    ksys_write
+    vfs_write
+    pipe_write
+    __wake_up_sync_key
+    __wake_up_common
+    pollwake
+    --               --
+    finish_task_switch.isra.0
+    schedule
+    schedule_hrtimeout_range_clock
+    schedule_hrtimeout_range
+    do_poll.constprop.0
+    do_sys_poll
+    __x64_sys_poll
+    x64_sys_call
+    do_syscall_64
+    entry_SYSCALL_64_after_hwframe
+    target:          Web Content 25576
+        16103
+
