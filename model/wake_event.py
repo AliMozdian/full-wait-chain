@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .process import Process
 
 
-@dataclass
+@dataclass(frozen=True)
 class WakeEvent:
     waker: Process
     target: Process
