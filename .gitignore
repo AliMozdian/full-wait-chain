@@ -4,6 +4,7 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+.venv/
 
 # test data files
 data/

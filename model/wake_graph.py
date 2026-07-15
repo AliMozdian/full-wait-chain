@@ -12,13 +12,13 @@ class WakeGraph:
 
         self.graph.add_node(
             event.waker.pid,
-            label=event.waker.name,
+            label = f"{event.waker.name}\n({event.waker.pid})",
             process=event.waker,
         )
 
         self.graph.add_node(
             event.target.pid,
-            label=event.target.name,
+            label = f"{event.target.name}\n({event.target.pid})",
             process=event.target,
         )
 
@@ -27,6 +27,7 @@ class WakeGraph:
             edge = self.graph[event.waker.pid][event.target.pid]
             edge["count"] += 1
             edge["total_offcpu_time"] += event.offcpu_time_us
+            edge["max_offcpu_time"] = max(edge["max_offcpu_time"], event.offcpu_time_us)
 
         else:
 
@@ -36,3 +37,8 @@ class WakeGraph:
                 count=1,
                 total_offcpu_time=event.offcpu_time_us,
             )
+    
+
+    def add_events(self, events: list[WakeEvent]):
+        for event in events:
+            self.add_event(event)
