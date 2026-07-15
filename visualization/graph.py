@@ -21,9 +21,7 @@ def visualize(graph: WakeGraph, output_file="wake_graph.html"):
 
         net.add_node(
             node,
-
-            label=f"{process.name}\n({process.pid})",
-
+            label=data["label"],
             title=f"""
             <b>{process.name}</b><br>
             PID: {process.pid}
@@ -31,19 +29,15 @@ def visualize(graph: WakeGraph, output_file="wake_graph.html"):
         )
 
     for src, dst, data in nx_graph.edges(data=True):
-
         net.add_edge(
-
             src,
-
             dst,
-
             label=str(data["count"]),
-
             title=f"""
             Wake count: {data['count']}<br>
             Total offcpu: {data['total_offcpu_time']} us
+            Max offcpu: {data['max_offcpu_time']} us
             """,
         )
 
-    net.show(output_file)
+    net.write_html(output_file, notebook=False)

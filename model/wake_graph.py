@@ -36,6 +36,7 @@ class WakeGraph:
                 event.target.pid,
                 count=1,
                 total_offcpu_time=event.offcpu_time_us,
+                max_offcpu_time=event.offcpu_time_us,
             )
     
 
