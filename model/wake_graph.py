@@ -25,8 +25,9 @@ class WakeGraph:
         if self.graph.has_edge(event.waker.pid, event.target.pid):
 
             edge = self.graph[event.waker.pid][event.target.pid]
+            edge["avg_offcpu_time"] = (edge["avg_offcpu_time"] * edge["count"] +
+                                       event.offcpu_time_us) / (edge["count"] + 1)
             edge["count"] += 1
-            edge["total_offcpu_time"] += event.offcpu_time_us
             edge["max_offcpu_time"] = max(edge["max_offcpu_time"], event.offcpu_time_us)
 
         else:
@@ -35,7 +36,7 @@ class WakeGraph:
                 event.waker.pid,
                 event.target.pid,
                 count=1,
-                total_offcpu_time=event.offcpu_time_us,
+                avg_offcpu_time=event.offcpu_time_us,
                 max_offcpu_time=event.offcpu_time_us,
             )
     

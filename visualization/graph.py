@@ -3,6 +3,16 @@ from pyvis.network import Network
 from model.wake_graph import WakeGraph
 
 
+def formatted_time(time_us: int) -> str:
+    """
+    Format offcpu time in microseconds to a human-readable string.
+    """
+    time_us /= 1000  # Convert to milliseconds
+    if time_us < 1:
+        return f"{round(time_us, 1)} ms"
+    else:
+        return f"{round(time_us)} ms"
+
 def visualize(graph: WakeGraph, output_file="wake_graph.html"):
 
     net = Network(
@@ -22,8 +32,7 @@ def visualize(graph: WakeGraph, output_file="wake_graph.html"):
         net.add_node(
             node,
             label=data["label"],
-            title=f"""
-            <b>{process.name}</b><br>
+            title=f"""{process.name}
             PID: {process.pid}
             """,
         )
@@ -32,11 +41,10 @@ def visualize(graph: WakeGraph, output_file="wake_graph.html"):
         net.add_edge(
             src,
             dst,
-            label=str(data["count"]),
-            title=f"""
-            Wake count: {data['count']}<br>
-            Total offcpu: {data['total_offcpu_time']} us
-            Max offcpu: {data['max_offcpu_time']} us
+            label=formatted_time(data["max_offcpu_time"]),
+            title=f"""Wake count: {data['count']}
+            Average offcpu: {formatted_time(data['avg_offcpu_time'])} ms
+            Max offcpu: {formatted_time(data['max_offcpu_time'])} ms
             """,
         )
 
