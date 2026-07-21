@@ -11,6 +11,9 @@ class ParseError(Exception):
 def parse_process(line: str) -> Process:
     parts = line.split()
 
+    if len(parts) == 2:
+        # No name, just PID
+        return Process(pid=-1000, name="<no-name>")
     if len(parts) < 3:
         raise ParseError(f"Invalid process line: '{line}'")
     try:

@@ -19,6 +19,9 @@ def visualize(graph: WakeGraph, output_file="wake_graph.html"):
         height="900px",
         width="100%",
         directed=True,
+        notebook=False,
+        select_menu=True,
+        filter_menu=True,
         bgcolor="white",
         font_color="black",
     )
@@ -43,8 +46,8 @@ def visualize(graph: WakeGraph, output_file="wake_graph.html"):
             dst,
             label=formatted_time(data["max_offcpu_time"]),
             title=f"""Wake count: {data['count']}
-            Average offcpu: {formatted_time(data['avg_offcpu_time'])} ms
-            Max offcpu: {formatted_time(data['max_offcpu_time'])} ms
+            Average offcpu: {formatted_time(data['avg_offcpu_time'])}
+            Max offcpu: {formatted_time(data['max_offcpu_time'])}
             """,
         )
 
