@@ -13,7 +13,8 @@ def parse_process(line: str) -> Process:
 
     if len(parts) == 2:
         # No name, just PID
-        return Process(pid=-1000, name="<no-name>")
+        # return Process(pid=-1000, name="<no-name>")
+        pass # will raise error in the next if
     if len(parts) < 3:
         raise ParseError(f"Invalid process line: '{line}'")
     try:
@@ -22,6 +23,8 @@ def parse_process(line: str) -> Process:
         raise ParseError(f"Invalid PID in line: '{line}'")
 
     name = " ".join(parts[1:-1])
+    if name.startswith("swapper"):
+        raise ParseError(f"Swapper Process: '{line}'")
     return Process(pid=pid, name=name)
 
 

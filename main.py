@@ -13,4 +13,4 @@ graph = WakeGraph()
 
 graph.add_events(events)
 
-visualize(graph)
+visualize(graph, "data/wake_graph.html")
