@@ -20,8 +20,8 @@ def visualize(graph: WakeGraph, output_file="wake_graph.html"):
         width="100%",
         directed=True,
         notebook=False,
-        select_menu=True,
-        filter_menu=True,
+        #select_menu=True,
+        #filter_menu=True,
         bgcolor="white",
         font_color="black",
     )
