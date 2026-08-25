@@ -54,28 +54,40 @@ def parse_record(record: list[str]) -> WakeEvent:
     waker = None
     target = None
     duration = None
+    waker_stack = []
+    target_stack = []
+
+    SF_WAKER, SF_SEPERATOR, SF_TARGET, SF_DURATION = 0, 1, 2, 3
+    searching_for = SF_WAKER # status of search, needed for saving the call stacks
 
     for i, line in enumerate(record):
         stripped = line.strip()
 
-        if stripped.startswith("waker:"):
+        if (searching_for == SF_WAKER) and stripped.startswith("waker:"):
             waker = parse_process(stripped)
+            searching_for = SF_SEPERATOR
 
-        elif stripped.startswith("target:"):
-            target = parse_process(stripped)
+        elif searching_for == SF_SEPERATOR:
+            if stripped.startswith("--"):
+                searching_for = SF_TARGET
+            else:
+                waker_stack.append(stripped)
 
-            # duration is the next non-empty line
-            for next_line in record[i + 1:]:
-                next_line = next_line.strip()
-                if not next_line:
-                    continue
+        elif searching_for == SF_TARGET:
+            if stripped.startswith("target:"):
+                target = parse_process(stripped)
+                searching_for = SF_DURATION
+            else:
+                target_stack.append(stripped)
 
+        elif searching_for == SF_DURATION:
+            # duration is the next non-empty line after target process-line
+            if stripped:
                 try:
-                    duration = int(next_line)
+                    duration = int(stripped)
                     break
                 except ValueError:
-                    raise ParseError(f"Invalid duration: '{next_line}'")
-            break
+                    raise ParseError(f"Invalid duration: '{stripped}'")
 
     if waker is None:
         raise ParseError("Missing waker.")
@@ -88,6 +100,8 @@ def parse_record(record: list[str]) -> WakeEvent:
         waker=waker,
         target=target,
         offcpu_time_us=duration,
+        waker_stack=waker_stack,
+        target_stack=target_stack,
     )
 
 
