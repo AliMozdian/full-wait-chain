@@ -5,7 +5,7 @@ from model.wake_graph import WakeGraph
 from visualization.graph import visualize
 
 events = parse_offwaketime(
-    "data/sample_output.txt",
+    "data/sample.out",
     "data/failed_records.txt",
 )
 
@@ -13,4 +13,4 @@ graph = WakeGraph()
 
 graph.add_events(events)
 
-visualize(graph)
+visualize(graph, output_file="data/wake_graph.html")
