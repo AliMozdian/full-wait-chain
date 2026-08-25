@@ -1,6 +1,6 @@
 from model.process import Process
 from model.wake_event import WakeEvent
-
+from datetime import datetime
 
 
 class ParseError(Exception):
@@ -114,7 +114,8 @@ def parse_offwaketime(input_path: str, output_path: str):
         lines = [line.rstrip() for line in f]
 
     records = split_records(lines)
-    events = []
+    events: list[WakeEvent] = []
+    swapper_waker_records: list[WakeEvent] = []
     failed_records = []
 
     for index, record in enumerate(records, start=1):
@@ -131,10 +132,21 @@ def parse_offwaketime(input_path: str, output_path: str):
                 })        
         
         else:
-            events.append(event)
+            if event.waker.name.startswith("swapper"):
+                swapper_waker_records.append(event)
+            else:
+                events.append(event)
+
+    with open(output_path, "w") as f:
+        f.write(f"Executed at {datetime.now()}:\n\n")
 
     if failed_records:
-        with open(output_path, "w") as f:
+        with open(output_path, "a") as f:
+
+            f.write("#" * 80 + "\n")
+            f.write("FAILED RECORDS\n")
+            f.write("#" * 80 + "\n")
+            f.write('\n\n')
 
             for failed in failed_records:
                 f.write("=" * 80 + "\n")
@@ -143,6 +155,27 @@ def parse_offwaketime(input_path: str, output_path: str):
                 f.write("=" * 80 + "\n")
                 for line in failed["record"]:
                     f.write(line + "\n")
+                f.write("\n\n")
+
+    if swapper_waker_records:
+        with open(output_path, "a") as f:
+
+            f.write("#" * 80 + "\n")
+            f.write("Swapper Waker Records\n")
+            f.write("#" * 80 + "\n")
+            f.write('\n\n')
+
+            for swr in swapper_waker_records:
+                f.write("=" * 80 + "\n")
+                f.write(f"waker: \t\t {swr.waker}\n")
+                for line in swr.waker_stack:
+                    f.write(line + "\n")
+                f.write('-- \t\t --\n')
+                for line in swr.target_stack:
+                    f.write(line + "\n")
+                f.write(f'target: \t\t {swr.target}\n')
+                f.write(f'duration: \t\t {swr.offcpu_time_us}\n')
+                f.write("=" * 80 + "\n")
                 f.write("\n\n")
 
     print(
