@@ -6,7 +6,7 @@ from visualization.graph import visualize
 
 events = parse_offwaketime(
     "data/sample.out",
-    "data/failed_records.txt",
+    "data/parser_ignored.txt",
 )
 
 graph = WakeGraph()

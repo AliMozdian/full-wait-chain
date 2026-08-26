@@ -4,6 +4,7 @@ from model.wake_analysis import (
     Confidence,
     WakeAnalysis,
 )
+from model.wake_event import WakeEvent
 
 from .matcher import matches, evidence
 from .rule import ClassificationRule
@@ -35,7 +36,7 @@ class WakeAnalyzer:
     # Wake cause
     # ---------------------------------------------------------------
 
-    def classify_wake_cause(self, event) -> Classification:
+    def classify_wake_cause(self, event: WakeEvent) -> Classification:
 
         for rule in self.wake_cause_rules:
 
@@ -65,7 +66,7 @@ class WakeAnalyzer:
     # Target wait
     # ---------------------------------------------------------------
 
-    def classify_target_wait(self, event) -> Classification:
+    def classify_target_wait(self, event: WakeEvent) -> Classification:
 
         for rule in self.target_wait_rules:
 
@@ -95,7 +96,7 @@ class WakeAnalyzer:
     # Complete analysis
     # ---------------------------------------------------------------
 
-    def analyze(self, event) -> WakeAnalysis:
+    def analyze(self, event: WakeEvent) -> WakeAnalysis:
 
         return WakeAnalysis(
             wake_cause=self.classify_wake_cause(event),

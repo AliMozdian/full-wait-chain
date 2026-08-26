@@ -9,7 +9,6 @@ class Confidence(Enum):
     MEDIUM = "medium"
     LOW = "low"
 
-
 @dataclass(frozen=True)
 class Classification:
     category: str

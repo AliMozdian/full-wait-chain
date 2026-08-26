@@ -2,6 +2,8 @@ from model.process import Process
 from model.wake_event import WakeEvent
 from datetime import datetime
 
+from analysis.analyzer import WakeAnalyzer
+
 
 class ParseError(Exception):
     """Raised when a single offwaketime record cannot be parsed."""
@@ -115,7 +117,7 @@ def parse_offwaketime(input_path: str, output_path: str):
 
     records = split_records(lines)
     events: list[WakeEvent] = []
-    swapper_waker_records: list[WakeEvent] = []
+    swapper_waker_events: list[WakeEvent] = []
     failed_records = []
 
     for index, record in enumerate(records, start=1):
@@ -133,7 +135,7 @@ def parse_offwaketime(input_path: str, output_path: str):
         
         else:
             if event.waker.name.startswith("swapper"):
-                swapper_waker_records.append(event)
+                swapper_waker_events.append(event)
             else:
                 events.append(event)
 
@@ -157,7 +159,9 @@ def parse_offwaketime(input_path: str, output_path: str):
                     f.write(line + "\n")
                 f.write("\n\n")
 
-    if swapper_waker_records:
+    if swapper_waker_events:
+        analyzer = WakeAnalyzer()
+
         with open(output_path, "a") as f:
 
             f.write("#" * 80 + "\n")
@@ -165,7 +169,7 @@ def parse_offwaketime(input_path: str, output_path: str):
             f.write("#" * 80 + "\n")
             f.write('\n\n')
 
-            for swr in swapper_waker_records:
+            for swr in swapper_waker_events:
                 f.write("=" * 80 + "\n")
                 f.write(f"waker: \t\t {swr.waker}\n")
                 for line in swr.waker_stack:
@@ -175,8 +179,19 @@ def parse_offwaketime(input_path: str, output_path: str):
                     f.write(line + "\n")
                 f.write(f'target: \t\t {swr.target}\n')
                 f.write(f'duration: \t\t {swr.offcpu_time_us}\n')
+                f.write("-" * 80 + "\n")
+                f.write("\n\n")
+
+                analysis = analyzer.analyze(swr)
+                f.write("wake-category: " + analysis.wake_cause.category + '\n')
+                f.write("wake-description: " + analysis.wake_cause.description + '\n')
+                f.write("wake-confidence: " + analysis.wake_cause.confidence.value + '\n')
+                f.write("target-category: " + analysis.target_wait.category + '\n')
+                f.write("target-description: " + analysis.target_wait.description + '\n')
+                f.write("target-confidence: " + analysis.target_wait.confidence.value + '\n')
                 f.write("=" * 80 + "\n")
                 f.write("\n\n")
+
 
     print(
         f"Finished parsing. Parsed {len(events)}/{len(records)} "
