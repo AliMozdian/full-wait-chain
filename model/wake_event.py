@@ -9,3 +9,6 @@ class WakeEvent:
     target: Process
 
     offcpu_time_us: int
+
+    waker_stack: list[str]
+    target_stack: list[str]

@@ -1,6 +1,8 @@
 from model.process import Process
 from model.wake_event import WakeEvent
+from datetime import datetime
 
+from analysis.analyzer import WakeAnalyzer
 
 
 class ParseError(Exception):
@@ -54,28 +56,40 @@ def parse_record(record: list[str]) -> WakeEvent:
     waker = None
     target = None
     duration = None
+    waker_stack = []
+    target_stack = []
+
+    SF_WAKER, SF_SEPERATOR, SF_TARGET, SF_DURATION = 0, 1, 2, 3
+    searching_for = SF_WAKER # status of search, needed for saving the call stacks
 
     for i, line in enumerate(record):
         stripped = line.strip()
 
-        if stripped.startswith("waker:"):
+        if (searching_for == SF_WAKER) and stripped.startswith("waker:"):
             waker = parse_process(stripped)
+            searching_for = SF_SEPERATOR
 
-        elif stripped.startswith("target:"):
-            target = parse_process(stripped)
+        elif searching_for == SF_SEPERATOR:
+            if stripped.startswith("--"):
+                searching_for = SF_TARGET
+            else:
+                waker_stack.append(stripped)
 
-            # duration is the next non-empty line
-            for next_line in record[i + 1:]:
-                next_line = next_line.strip()
-                if not next_line:
-                    continue
+        elif searching_for == SF_TARGET:
+            if stripped.startswith("target:"):
+                target = parse_process(stripped)
+                searching_for = SF_DURATION
+            else:
+                target_stack.append(stripped)
 
+        elif searching_for == SF_DURATION:
+            # duration is the next non-empty line after target process-line
+            if stripped:
                 try:
-                    duration = int(next_line)
+                    duration = int(stripped)
                     break
                 except ValueError:
-                    raise ParseError(f"Invalid duration: '{next_line}'")
-            break
+                    raise ParseError(f"Invalid duration: '{stripped}'")
 
     if waker is None:
         raise ParseError("Missing waker.")
@@ -88,6 +102,8 @@ def parse_record(record: list[str]) -> WakeEvent:
         waker=waker,
         target=target,
         offcpu_time_us=duration,
+        waker_stack=waker_stack,
+        target_stack=target_stack,
     )
 
 
@@ -100,7 +116,8 @@ def parse_offwaketime(input_path: str, output_path: str):
         lines = [line.rstrip() for line in f]
 
     records = split_records(lines)
-    events = []
+    events: list[WakeEvent] = []
+    swapper_waker_events: list[WakeEvent] = []
     failed_records = []
 
     for index, record in enumerate(records, start=1):
@@ -117,10 +134,21 @@ def parse_offwaketime(input_path: str, output_path: str):
                 })        
         
         else:
-            events.append(event)
+            if event.waker.name.startswith("swapper"):
+                swapper_waker_events.append(event)
+            else:
+                events.append(event)
+
+    with open(output_path, "w") as f:
+        f.write(f"Executed at {datetime.now()}:\n\n")
 
     if failed_records:
-        with open(output_path, "w") as f:
+        with open(output_path, "a") as f:
+
+            f.write("#" * 80 + "\n")
+            f.write("FAILED RECORDS\n")
+            f.write("#" * 80 + "\n")
+            f.write('\n\n')
 
             for failed in failed_records:
                 f.write("=" * 80 + "\n")
@@ -130,6 +158,40 @@ def parse_offwaketime(input_path: str, output_path: str):
                 for line in failed["record"]:
                     f.write(line + "\n")
                 f.write("\n\n")
+
+    if swapper_waker_events:
+        analyzer = WakeAnalyzer()
+
+        with open(output_path, "a") as f:
+
+            f.write("#" * 80 + "\n")
+            f.write("Swapper Waker Records\n")
+            f.write("#" * 80 + "\n")
+            f.write('\n\n')
+
+            for swr in swapper_waker_events:
+                f.write("=" * 80 + "\n")
+                f.write(f"waker: \t\t {swr.waker}\n")
+                for line in swr.waker_stack:
+                    f.write(line + "\n")
+                f.write('-- \t\t --\n')
+                for line in swr.target_stack:
+                    f.write(line + "\n")
+                f.write(f'target: \t\t {swr.target}\n')
+                f.write(f'duration: \t\t {swr.offcpu_time_us}\n')
+                f.write("-" * 80 + "\n")
+                f.write("\n\n")
+
+                analysis = analyzer.analyze(swr)
+                f.write("wake-category: " + analysis.wake_cause.category + '\n')
+                f.write("wake-description: " + analysis.wake_cause.description + '\n')
+                f.write("wake-confidence: " + analysis.wake_cause.confidence.value + '\n')
+                f.write("target-category: " + analysis.target_wait.category + '\n')
+                f.write("target-description: " + analysis.target_wait.description + '\n')
+                f.write("target-confidence: " + analysis.target_wait.confidence.value + '\n')
+                f.write("=" * 80 + "\n")
+                f.write("\n\n")
+
 
     print(
         f"Finished parsing. Parsed {len(events)}/{len(records)} "
